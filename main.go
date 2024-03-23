@@ -7,7 +7,11 @@ import (
   "log"
   "net/http"
   "os"
+  "strconv"
 )
+
+const BTCPercentage = 70
+const ETHPercentage = 30
 
 // our json looks like this:
 // {
@@ -36,6 +40,11 @@ type CurrencyInfo struct {
 type CryptoRates struct {
   BTC string
   ETH string
+}
+
+type CryptoHoldings struct {
+  BTCHoldings float64
+  ETHHoldings float64
 }
 
 func getRates() CryptoRates {
@@ -68,10 +77,42 @@ func main() {
     log.Fatalln("BTC or ETH rates not found")
   }
 
-  spendingMoney := os.Args[1]
+  spendingMoneyInput := os.Args[1]
+  spendingMoney, err := strconv.ParseFloat(spendingMoneyInput, 64)
+  if err != nil {
+    log.Fatalln(err)
+  }
+
+  // TODO: refactor into to a function
+  btcRate, err:= strconv.ParseFloat(rates.BTC, 64)
+  if err != nil {
+    log.Fatalln(err)
+  }
+
+  ethRate, err:= strconv.ParseFloat(rates.ETH, 64)
+  if err != nil {
+    log.Fatalln(err)
+  }
+
+  // TODO: Round? And subtract from total?
+  btcSpendingMoney := BTCPercentage * spendingMoney / 100
+  ethSpendingMoney := ETHPercentage * spendingMoney / 100
 
   fmt.Println(spendingMoney)
+  fmt.Println(btcSpendingMoney)
+  fmt.Println(ethSpendingMoney)
+
+  //TODO: store rates as big intos to avoid floating point errors
+  // spending money usd * (btc / usd) = btc
+  btcPurchases := btcSpendingMoney * btcRate
+  ethPurchases := ethSpendingMoney * ethRate
+
+  totalHoldings := CryptoHoldings{BTCHoldings: btcPurchases, ETHHoldings: ethPurchases}
+  resultJson, err := json.Marshal(totalHoldings)
 
   fmt.Println(rates.BTC)
   fmt.Println(rates.ETH)
+
+  // TODO: write tests
+  fmt.Println(string(resultJson[:]))
 }

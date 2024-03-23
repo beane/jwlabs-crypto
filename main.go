@@ -6,6 +6,7 @@ import (
   "io/ioutil"
   "log"
   "net/http"
+  "math"
   "os"
   "strconv"
 )
@@ -71,19 +72,14 @@ func getRates() CryptoRates {
 }
 
 func main() {
-  // http request!
+  // http request
   rates := getRates()
+
+  // parse rates from strings
   if rates.BTC == "" || rates.ETH == "" {
     log.Fatalln("BTC or ETH rates not found")
   }
 
-  spendingMoneyInput := os.Args[1]
-  spendingMoney, err := strconv.ParseFloat(spendingMoneyInput, 64)
-  if err != nil {
-    log.Fatalln(err)
-  }
-
-  // TODO: refactor into to a function
   btcRate, err:= strconv.ParseFloat(rates.BTC, 64)
   if err != nil {
     log.Fatalln(err)
@@ -94,24 +90,31 @@ func main() {
     log.Fatalln(err)
   }
 
-  // TODO: Round? And subtract from total?
+  // parse spending money from first argument
+  spendingMoneyInput := os.Args[1]
+  spendingMoney, err := strconv.ParseFloat(spendingMoneyInput, 64)
+  if err != nil {
+    log.Fatalln(err)
+  }
+
+  // compute amount of USD to spend on each kind of asset
+  // ideally we would convert to ints to avoid floating point errors (multiplying by 10^18)
+  // but it seems like the numbers we're dealing with would be too big to avoid errors
+  // according to this article:
+  // https://betterprogramming.pub/compute-without-floating-point-errors-7b92695bde4 
   btcSpendingMoney := BTCPercentage * spendingMoney / 100
-  ethSpendingMoney := ETHPercentage * spendingMoney / 100
+  ethSpendingMoney := spendingMoney - btcSpendingMoney
 
-  fmt.Println(spendingMoney)
-  fmt.Println(btcSpendingMoney)
-  fmt.Println(ethSpendingMoney)
+  // Round to 2 digits of precision
+  btcSpendingMoney = math.Round(btcSpendingMoney * 100)/100
+  ethSpendingMoney = math.Round(ethSpendingMoney * 100)/100
 
-  //TODO: store rates as big intos to avoid floating point errors
   // spending money usd * (btc / usd) = btc
   btcPurchases := btcSpendingMoney * btcRate
   ethPurchases := ethSpendingMoney * ethRate
 
   totalHoldings := CryptoHoldings{BTCHoldings: btcPurchases, ETHHoldings: ethPurchases}
   resultJson, err := json.Marshal(totalHoldings)
-
-  fmt.Println(rates.BTC)
-  fmt.Println(rates.ETH)
 
   // TODO: write tests
   fmt.Println(string(resultJson[:]))

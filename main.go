@@ -72,7 +72,8 @@ func getRates() CryptoRates {
 	return responseData.Data.Rates
 }
 
-func getCryptoHoldings(spendingMoney float64, rates CryptoRates) CryptoHoldings {
+// spendingMoney is in cents to avoid float errors
+func getCryptoHoldings(spendingMoney int64, rates CryptoRates) CryptoHoldings {
 	// convert rates to int64, multiplying by 10^18 to avoid floating point errors
 	btcRateFloat, err := strconv.ParseFloat(rates.BTC, 64)
 	if err != nil {
@@ -87,17 +88,14 @@ func getCryptoHoldings(spendingMoney float64, rates CryptoRates) CryptoHoldings 
 	ethRate := int64(ethRateFloat * math.Pow(10, 18))
 
 	// compute amount of USD to spend on each kind of asset
-	btcSpendingMoney := BTCPercentage * spendingMoney / 100
-	ethSpendingMoney := spendingMoney - btcSpendingMoney
-
-	// Round to 2 digits of precision
-	btcSpendingMoney = math.Round(btcSpendingMoney*100) / 100
-	ethSpendingMoney = math.Round(ethSpendingMoney*100) / 100
+	btcSpendingMoney := BTCPercentage * float64(spendingMoney) / 100
+	ethSpendingMoney := float64(spendingMoney) - btcSpendingMoney
 
 	// spending money usd * (btc / usd) = btc
 	// divide by 10^18 to avoid floating point errors
-	btcPurchases := btcSpendingMoney * float64(btcRate) / math.Pow(10, 18)
-	ethPurchases := ethSpendingMoney * float64(ethRate) / math.Pow(10, 18)
+	// divide by another 100 to convert from cents to dollars
+	btcPurchases := btcSpendingMoney * float64(btcRate) / math.Pow(10, 20)
+	ethPurchases := ethSpendingMoney * float64(ethRate) / math.Pow(10, 20)
 
 	return CryptoHoldings{BTCHoldings: btcPurchases, ETHHoldings: ethPurchases}
 }
@@ -116,7 +114,7 @@ func main() {
 		log.Fatalln("BTC or ETH rates not found")
 	}
 
-	totalHoldings := getCryptoHoldings(spendingMoney, rates)
+	totalHoldings := getCryptoHoldings(int64(spendingMoney*100), rates)
 	resultJson, err := json.Marshal(totalHoldings)
 
 	// TODO: write tests

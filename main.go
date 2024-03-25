@@ -72,22 +72,7 @@ func getRates() CryptoRates {
 	return responseData.Data.Rates
 }
 
-func main() {
-	// parse spending money from first argument
-	spendingMoneyInput := os.Args[1]
-	spendingMoney, err := strconv.ParseFloat(spendingMoneyInput, 64)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	// http request
-	rates := getRates()
-
-	// parse rates from strings
-	if rates.BTC == "" || rates.ETH == "" {
-		log.Fatalln("BTC or ETH rates not found")
-	}
-
+func getCryptoHoldings(spendingMoney float64, rates CryptoRates) CryptoHoldings {
 	// convert rates to int64, multiplying by 10^18 to avoid floating point errors
 	btcRateFloat, err := strconv.ParseFloat(rates.BTC, 64)
 	if err != nil {
@@ -114,7 +99,24 @@ func main() {
 	btcPurchases := btcSpendingMoney * float64(btcRate) / math.Pow(10, 18)
 	ethPurchases := ethSpendingMoney * float64(ethRate) / math.Pow(10, 18)
 
-	totalHoldings := CryptoHoldings{BTCHoldings: btcPurchases, ETHHoldings: ethPurchases}
+	return CryptoHoldings{BTCHoldings: btcPurchases, ETHHoldings: ethPurchases}
+}
+
+func main() {
+	// parse spending money from first argument
+	spendingMoneyInput := os.Args[1]
+	spendingMoney, err := strconv.ParseFloat(spendingMoneyInput, 64)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	// http request
+	rates := getRates()
+	if rates.BTC == "" || rates.ETH == "" {
+		log.Fatalln("BTC or ETH rates not found")
+	}
+
+	totalHoldings := getCryptoHoldings(spendingMoney, rates)
 	resultJson, err := json.Marshal(totalHoldings)
 
 	// TODO: write tests

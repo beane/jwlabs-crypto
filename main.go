@@ -49,9 +49,9 @@ type CryptoHoldings struct {
 	ETHHoldings float64
 }
 
-func getRates() CryptoRates {
+func getRates(url string) CryptoRates {
 	// http request
-	resp, err := http.Get("https://api.coinbase.com/v2/exchange-rates?currency=USD")
+	resp, err := http.Get(url + "/v2/exchange-rates?currency=USD")
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -109,7 +109,7 @@ func main() {
 	}
 
 	// http request
-	rates := getRates()
+	rates := getRates("https://api.coinbase.com")
 	if rates.BTC == "" || rates.ETH == "" {
 		log.Fatalln("BTC or ETH rates not found")
 	}

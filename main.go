@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math"
 	"net/http"
 	"os"
-	"strconv"
+
+	"github.com/shopspring/decimal"
 )
 
-const BTCPercentage = 70
-const ETHPercentage = 30
+var BTCPortion = decimal.NewFromFloat(0.7)
+var ETHPortion = decimal.NewFromFloat(0.3)
 
 // our json looks like this:
 //
@@ -44,9 +44,10 @@ type CryptoRates struct {
 	ETH string
 }
 
+// Return type
 type CryptoHoldings struct {
-	BTCHoldings float64
-	ETHHoldings float64
+	BTCHoldings decimal.Decimal
+	ETHHoldings decimal.Decimal
 }
 
 // I'll be honest.... I don't like passing in the URL here,
@@ -78,30 +79,24 @@ func getRates(url string) CryptoRates {
 	return responseData.Data.Rates
 }
 
-// spendingMoney is in cents to avoid float errors
-func getCryptoHoldings(spendingMoney int64, rates CryptoRates) CryptoHoldings {
-	// convert rates to int64, multiplying by 10^18 to avoid floating point errors
-	btcRateFloat, err := strconv.ParseFloat(rates.BTC, 64)
+func computeCryptoHoldings(spendingMoney decimal.Decimal, rates CryptoRates) CryptoHoldings {
+	btcRate, err := decimal.NewFromString(rates.BTC)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	btcRate := int64(btcRateFloat * math.Pow(10, 18))
 
-	ethRateFloat, err := strconv.ParseFloat(rates.ETH, 64)
+	ethRate, err := decimal.NewFromString(rates.ETH)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	ethRate := int64(ethRateFloat * math.Pow(10, 18))
 
 	// compute amount of USD to spend on each kind of asset
-	btcSpendingMoney := BTCPercentage * float64(spendingMoney) / 100
-	ethSpendingMoney := float64(spendingMoney) - btcSpendingMoney
+	btcSpendingMoney := BTCPortion.Mul(spendingMoney)
+	ethSpendingMoney := ETHPortion.Mul(spendingMoney)
 
-	// spending money usd * (btc / usd) = btc
-	// divide by 10^18 to avoid floating point errors
-	// divide by another 100 to convert from cents to dollars
-	btcPurchases := btcSpendingMoney * float64(btcRate) / math.Pow(10, 20)
-	ethPurchases := ethSpendingMoney * float64(ethRate) / math.Pow(10, 20)
+	// spending money USD * (btc / usd) = btc
+	btcPurchases := btcSpendingMoney.Mul(btcRate)
+	ethPurchases := ethSpendingMoney.Mul(ethRate)
 
 	return CryptoHoldings{BTCHoldings: btcPurchases, ETHHoldings: ethPurchases}
 }
@@ -109,7 +104,7 @@ func getCryptoHoldings(spendingMoney int64, rates CryptoRates) CryptoHoldings {
 func main() {
 	// parse spending money from first argument
 	spendingMoneyInput := os.Args[1]
-	spendingMoney, err := strconv.ParseFloat(spendingMoneyInput, 64)
+	spendingMoney, err := decimal.NewFromString(spendingMoneyInput)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -120,8 +115,7 @@ func main() {
 		log.Fatalln("BTC or ETH rates not found")
 	}
 
-	// Convert spending money to int64 cents to avoid floating point errors
-	totalHoldings := getCryptoHoldings(int64(spendingMoney*100), rates)
+	totalHoldings := computeCryptoHoldings(spendingMoney, rates)
 	resultJson, err := json.Marshal(totalHoldings)
 
 	// TODO: write tests

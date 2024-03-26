@@ -26,7 +26,7 @@ func TestGetRates(t *testing.T) {
 
 func TestGetCryptoHoldings(t *testing.T) {
 	exampleRates := CryptoRates{BTC: "1", ETH: "1"}
-	rates := getCryptoHoldings(10000, exampleRates)
+	rates := computeCryptoHoldings(10000, exampleRates)
 	expectedRates := CryptoHoldings{BTCHoldings: 70, ETHHoldings: 30}
 
 	if rates != expectedRates {

@@ -18,7 +18,9 @@ All the code lives in `main.go` and `main_test.go`. I think the solution is simp
 
 In addition to the `main` function that controls the input logic, the two main functions are 
 - `getRates` which retrieves the BTC and ETH rates from the Coinbase API and parses the response. I constructed types to collect only the data we need (BTC and ETH rates), while ignoring data that we don't (eg. the currency field, which is always "USD" or the rates of other currencies)
-- `getCryptoHoldings` which takes the spending money in US cents and the parsed rates of BTC and ETH and computes how to allocate our purchases according to the expected 70/30 split. Extra care is taken to avoid floating point errors by multiplying decimal conversion rates by `10^18` and converting to `int64` before performing and potentially buggy floating point operations.
+- `computeCryptoHoldings` which takes the spending money in USD and the parsed rates of BTC and ETH and computes how to allocate our purchases according to the expected 70/30 split.
+
+I used the [popular `Decimal` library](https://github.com/shopspring/decimal) to avoid floating point errors.
 
 ### Tests
 The test for `getRates` creates a test http server and spoofs the data it returns to confirm that we parse the response correctly.

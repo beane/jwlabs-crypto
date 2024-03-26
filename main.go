@@ -49,6 +49,12 @@ type CryptoHoldings struct {
 	ETHHoldings float64
 }
 
+// I'll be honest.... I don't like passing in the URL here,
+// it doesn't really make sense. But I couldn't figure out
+// how to test the code with fake responses from the endpoint
+// without passing in the URL generated from the httptest server.
+// I'm sure there is a way to do it right, but this is what
+// I came up with :)
 func getRates(url string) CryptoRates {
 	// http request
 	resp, err := http.Get(url + "/v2/exchange-rates?currency=USD")
@@ -114,6 +120,7 @@ func main() {
 		log.Fatalln("BTC or ETH rates not found")
 	}
 
+	// Convert spending money to int64 cents to avoid floating point errors
 	totalHoldings := getCryptoHoldings(int64(spendingMoney*100), rates)
 	resultJson, err := json.Marshal(totalHoldings)
 

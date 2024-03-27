@@ -17,12 +17,13 @@ var ETHPortion = decimal.NewFromFloat(0.3)
 // our json looks like this:
 //
 //	{
-//		 "data"=> {
-//			 "currency"=>"USD",
-//			 "rates"=> {
-//				 "BTC"=>"0.000015409648952",
-//				 "ETH"=>"0.0002930428692413"
-//			 }
+//	  "data"=> {
+//		"currency"=>"USD",
+//		"rates"=> {
+//			"BTC"=>"0.000015409648952",
+//			"ETH"=>"0.0002930428692413"
+//		}
+//	  }
 //	}
 //
 // It contains the rates for many more currencies, but we can ignore them for this problem.
@@ -91,8 +92,10 @@ func computeCryptoHoldings(spendingMoney decimal.Decimal, rates CryptoRates) Cry
 	}
 
 	// compute amount of USD to spend on each kind of asset
-	btcSpendingMoney := BTCPortion.Mul(spendingMoney)
-	ethSpendingMoney := ETHPortion.Mul(spendingMoney)
+	// round to 2 digits of precision because we can't have
+	// fractions of a penny
+	btcSpendingMoney := BTCPortion.Mul(spendingMoney).Round(2)
+	ethSpendingMoney := ETHPortion.Mul(spendingMoney).Round(2)
 
 	// spending money USD * (btc / usd) = btc
 	btcPurchases := btcSpendingMoney.Mul(btcRate)
@@ -109,15 +112,28 @@ func main() {
 		log.Fatalln(err)
 	}
 
+	// This lets you cheat a little, if you want: 0.220 == 0.22 :)
+	// Either way, the money amount is the same!
+	if !spendingMoney.Round(2).Equal(spendingMoney) {
+		fmt.Println("You passed in an argument with too many digits of precision.")
+		fmt.Println("Please only use valid amounts of dollars and cents.")
+		fmt.Println("For example: go run . 100.73")
+		fmt.Println("")
+		log.Fatalln("Invalid USD amount: too many decimal digits.")
+	}
+
 	// http request
 	rates := getRates("https://api.coinbase.com")
-	if rates.BTC == "" || rates.ETH == "" {
-		log.Fatalln("BTC or ETH rates not found")
+	if rates.BTC == "" {
+		log.Fatalln("BTC rates not found")
+	}
+
+	if rates.ETH == "" {
+		log.Fatalln("ETH rates not found")
 	}
 
 	totalHoldings := computeCryptoHoldings(spendingMoney, rates)
 	resultJson, err := json.Marshal(totalHoldings)
 
-	// TODO: write tests
 	fmt.Println(string(resultJson[:]))
 }

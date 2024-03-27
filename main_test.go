@@ -27,15 +27,66 @@ func TestGetRates(t *testing.T) {
 }
 
 func TestComputeCryptoHoldings(t *testing.T) {
-	exampleRates := CryptoRates{BTC: "1", ETH: "1"}
-	assets := computeCryptoHoldings(decimal.NewFromInt(100), exampleRates)
-	expectedAssets := CryptoHoldings{BTCHoldings: decimal.NewFromInt(70), ETHHoldings: decimal.NewFromInt(30)}
-
-	if !expectedAssets.BTCHoldings.Equal(assets.BTCHoldings) {
-		t.Errorf("Expected BTC => 70, got BTC => %s", assets.BTCHoldings)
+	tests := []struct {
+		rates  CryptoRates
+		usd    decimal.Decimal
+		result CryptoHoldings
+	}{
+		{
+			rates: CryptoRates{BTC: "1", ETH: "1"},
+			usd:   decimal.NewFromInt(100),
+			result: CryptoHoldings{
+				BTCHoldings: decimal.NewFromInt(70),
+				ETHHoldings: decimal.NewFromInt(30),
+			},
+		},
+		{
+			rates: CryptoRates{BTC: "5", ETH: "3"},
+			usd:   decimal.NewFromInt(100),
+			result: CryptoHoldings{
+				BTCHoldings: decimal.NewFromInt(350),
+				ETHHoldings: decimal.NewFromInt(90),
+			},
+		},
+		{
+			rates: CryptoRates{BTC: "0.0123", ETH: "0.00045"},
+			usd:   decimal.NewFromInt(100),
+			result: CryptoHoldings{
+				BTCHoldings: decimal.NewFromFloat(0.861),
+				ETHHoldings: decimal.NewFromFloat(0.0135),
+			},
+		},
+		{
+			rates: CryptoRates{BTC: "0.0123", ETH: "0.00045"},
+			usd:   decimal.NewFromFloat(200.58),
+			result: CryptoHoldings{
+				BTCHoldings: decimal.NewFromFloat(1.727043),
+				ETHHoldings: decimal.NewFromFloat(0.0270765),
+			},
+		},
 	}
 
-	if !expectedAssets.ETHHoldings.Equal(assets.ETHHoldings) {
-		t.Errorf("Expected ETH => 30, got ETH => %s", assets.ETHHoldings)
+	for _, test := range tests {
+		assets := computeCryptoHoldings(test.usd, test.rates)
+		expectedAssets := test.result
+		if !expectedAssets.BTCHoldings.Equal(assets.BTCHoldings) {
+			t.Errorf(
+				"Spending $%s (BTC: %s): Expected BTC => %s, got BTC => %s",
+				test.usd,
+				test.rates.BTC,
+				expectedAssets.BTCHoldings,
+				assets.BTCHoldings,
+			)
+		}
+
+		if !expectedAssets.ETHHoldings.Equal(assets.ETHHoldings) {
+			t.Errorf(
+				"Spending $%s (ETH: %s): Expected ETH => %s, got ETH => %s",
+				test.usd,
+				test.rates.ETH,
+				expectedAssets.ETHHoldings,
+				assets.ETHHoldings,
+			)
+		}
 	}
 }

@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/shopspring/decimal"
 )
 
 func TestGetRates(t *testing.T) {
@@ -20,16 +22,20 @@ func TestGetRates(t *testing.T) {
 	expected := CryptoRates{BTC: "1", ETH: "0.5"}
 
 	if rates != expected {
-		t.Errorf("Expected 'BTC => 1, ETH => 0.5', got BTC => %s, ETH => %s", rates.BTC, rates.ETH)
+		t.Errorf("Expected BTC => 1, ETH => 0.5, got BTC => %s, ETH => %s", rates.BTC, rates.ETH)
 	}
 }
 
 func TestGetCryptoHoldings(t *testing.T) {
 	exampleRates := CryptoRates{BTC: "1", ETH: "1"}
-	rates := computeCryptoHoldings(10000, exampleRates)
-	expectedRates := CryptoHoldings{BTCHoldings: 70, ETHHoldings: 30}
+	assets := computeCryptoHoldings(decimal.NewFromInt(100), exampleRates)
+	expectedAssets := CryptoHoldings{BTCHoldings: decimal.NewFromInt(70), ETHHoldings: decimal.NewFromInt(30)}
 
-	if rates != expectedRates {
-		t.Errorf("blurp")
+	if !expectedAssets.BTCHoldings.Equal(assets.BTCHoldings) {
+		t.Errorf("Expected BTC => 70, got BTC => %s", assets.BTCHoldings)
+	}
+
+	if !expectedAssets.ETHHoldings.Equal(assets.ETHHoldings) {
+		t.Errorf("Expected ETH => 30, got ETH => %s", assets.ETHHoldings)
 	}
 }

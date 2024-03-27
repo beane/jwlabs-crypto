@@ -16,15 +16,15 @@ var ETHPortion = decimal.NewFromFloat(0.3)
 
 // our json looks like this:
 //
-//	{
-//	  "data"=> {
-//		"currency"=>"USD",
-//		"rates"=> {
-//			"BTC"=>"0.000015409648952",
-//			"ETH"=>"0.0002930428692413"
-//		}
-//	  }
-//	}
+//	 {
+//		  "data"=> {
+//			"currency"=>"USD",
+//			"rates"=> {
+//				"BTC"=>"0.000015409648952",
+//				"ETH"=>"0.0002930428692413"
+//			}
+//		  }
+//	 }
 //
 // It contains the rates for many more currencies, but we can ignore them for this problem.
 // We also ignore the currency field because we are always requesting USD.

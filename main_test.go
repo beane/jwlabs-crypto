@@ -26,7 +26,7 @@ func TestGetRates(t *testing.T) {
 	}
 }
 
-func TestGetCryptoHoldings(t *testing.T) {
+func TestComputeCryptoHoldings(t *testing.T) {
 	exampleRates := CryptoRates{BTC: "1", ETH: "1"}
 	assets := computeCryptoHoldings(decimal.NewFromInt(100), exampleRates)
 	expectedAssets := CryptoHoldings{BTCHoldings: decimal.NewFromInt(70), ETHHoldings: decimal.NewFromInt(30)}

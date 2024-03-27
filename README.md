@@ -26,3 +26,23 @@ I used the [popular `Decimal` library](https://github.com/shopspring/decimal) to
 The test for `getRates` creates a test http server and spoofs the data it returns to confirm that we parse the response correctly.
 
 The test for `getCryptoHoldings` is simpler, since it only requires us to pass in the rates we which to test. TODO more
+
+## How to run
+
+### Install dependencies
+
+```
+go mod tidy
+```
+
+### Run program
+
+```
+go run . 20.33 # put in whatever dollar amount you want
+```
+
+### Run tests
+
+```
+go test
+```
